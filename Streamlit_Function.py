@@ -16,13 +16,13 @@ import tensorflow as tf
 from transformers import pipeline
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage
-from Chroma_Embed import chroma_collection
+from Chroma_VectorStore import chroma_collection
 import chromadb.utils.embedding_functions as embedding_functions
 
 # Page configuration
 st.set_page_config(
     page_title="Emotion Detection & Analysis",
-    page_icon="😊",
+    page_icon="💁🏻‍♂️",
     layout="wide"
 )
 
@@ -32,7 +32,6 @@ if 'model_loaded' not in st.session_state:
 if 'sentiment_pipeline' not in st.session_state:
     st.session_state.sentiment_pipeline = None
 
-# Sidebar configuration
 st.sidebar.title("⚙️ Configuration")
 api_key = st.sidebar.text_input(
     "Enter Gemini API Key",
@@ -40,15 +39,14 @@ api_key = st.sidebar.text_input(
     help="Enter your Google Gemini API key"
 )
 
-# Emotion labels
 EMOTION_LABELS = ['Anger', 'Disgust', 'Fear', 'Happiness', 'Sadness', 'Surprise', 'Neutral', 'Contempt']
 
 @st.cache_resource
 def load_emotion_model():
     """Load the emotion detection model"""
     try:
-        model = tf.keras.models.model_from_json(open("model_part2.json", "r").read())
-        model.load_weights("model_second_try.weights.h5")
+        model = tf.keras.models.model_from_json(open("Model_Parameters/model_part2.json", "r").read())
+        model.load_weights("Model_Parameters/model_second_try.weights.h5")
         return model
     except Exception as e:
         st.error(f"Error loading model: {str(e)}")
@@ -65,47 +63,33 @@ def load_sentiment_pipeline():
 
 def preprocess_image(image, target_size=(48, 48)):
     """Preprocess image for model prediction"""
-    # Convert PIL Image to numpy array
     img_array = np.array(image)
-    
-    # Convert to grayscale if needed
     if len(img_array.shape) == 3 and img_array.shape[2] == 3:
         img_gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
     else:
         img_gray = img_array
-    
-    # Resize to target size
-    img_resized = cv2.resize(img_gray, target_size)
-    
-    # Convert back to 3 channels
-    img_3channel = cv2.cvtColor(img_resized, cv2.COLOR_GRAY2RGB)
-    
-    # Add batch dimension (no normalization)
-    img_batch = np.expand_dims(img_3channel, axis=0)
+        img_resized = cv2.resize(img_gray, target_size)
+        img_3channel = cv2.cvtColor(img_resized, cv2.COLOR_GRAY2RGB)
+        img_batch = np.expand_dims(img_3channel, axis=0)
     
     return img_batch
 
 def get_rag_response(emotion, user_query, api_key):
     """Get RAG-based response from Langchain"""
     try:
-        # Initialize embeddings and LLM
         google_ef = embedding_functions.GoogleGenerativeAiEmbeddingFunction(api_key=api_key)
         llm = ChatGoogleGenerativeAI(
             model="gemini-2.0-flash-exp",
             google_api_key=api_key
         )
-        
-        # Query ChromaDB with emotion
         collection = chroma_collection(google_ef)
         results = collection.query(
             query_texts=[emotion],
             n_results=1
         )
         
-        # Get context from results
         context = results['metadatas'][0][0]['description'] if results['metadatas'] else "No context available"
         
-        # Create messages with user's custom query
         full_query = f"Detected emotion: {emotion}. User query: {user_query}"
         messages = [
             SystemMessage(
@@ -119,8 +103,6 @@ def get_rag_response(emotion, user_query, api_key):
             ),
             HumanMessage(content=full_query)
         ]
-        
-        # Get response
         response = llm.invoke(messages)
         return response.content
     
@@ -144,16 +126,13 @@ def analyze_sentiment(text, emotion_labels):
         st.error(f"Sentiment analysis error: {str(e)}")
         return None
 
-# Main app
-st.title("😊 Emotion Detection & Support System")
+st.title("💁🏻‍♂️ Emotion Detection & Support System")
 st.markdown("---")
 
-# Check if API key is provided
 if not api_key:
     st.warning("⚠️ Please enter your Gemini API key in the sidebar to continue.")
     st.stop()
 
-# Load models
 with st.spinner("Loading models..."):
     emotion_model = load_emotion_model()
     if not st.session_state.model_loaded and emotion_model:
@@ -164,7 +143,6 @@ if not emotion_model:
     st.error("❌ Failed to load emotion detection model. Please check model files.")
     st.stop()
 
-# Camera input section
 st.header("📸 Capture Your Expression")
 col1, col2 = st.columns(2)
 
@@ -173,34 +151,26 @@ with col1:
 
 with col2:
     if camera_image is not None:
-        # Display captured image
         image = Image.open(camera_image)
         st.image(image, caption="Captured Image", use_container_width=True)
         
-        # Process button
         if st.button("🔍 Analyze Emotion", type="primary", use_container_width=True):
             with st.spinner("Analyzing emotion..."):
-                # Preprocess image
                 processed_img = preprocess_image(image)
-                
-                # Predict emotion
                 predictions = emotion_model.predict(processed_img, verbose=0)
                 predicted_class = np.argmax(predictions[0])
                 confidence = predictions[0][predicted_class]
                 detected_emotion = EMOTION_LABELS[predicted_class]
                 
-                # Store in session state
                 st.session_state.detected_emotion = detected_emotion
                 st.session_state.confidence = confidence
                 st.session_state.predictions = predictions[0]
                 st.session_state.image_analyzed = True
 
-# Results section
 if hasattr(st.session_state, 'detected_emotion') and st.session_state.image_analyzed:
     st.markdown("---")
     st.header("📊 Analysis Results")
-    
-    # Emotion detection results
+
     col1, col2, col3 = st.columns(3)
     
     with col1:
@@ -212,12 +182,11 @@ if hasattr(st.session_state, 'detected_emotion') and st.session_state.image_anal
     with col3:
         st.metric("Status", "✅ Analyzed")
     
-    # Show all emotion probabilities
     with st.expander("📈 View All Emotion Probabilities"):
         for i, emotion in enumerate(EMOTION_LABELS):
             st.progress(float(st.session_state.predictions[i]), text=f"{emotion}: {st.session_state.predictions[i]*100:.2f}%")
     
-    # User query input
+
     st.markdown("---")
     st.header("💬 Ask About Your Emotion")
     
@@ -229,13 +198,11 @@ if hasattr(st.session_state, 'detected_emotion') and st.session_state.image_anal
         st.session_state.user_query = user_query
         st.session_state.query_submitted = True
     
-    # Generate RAG response if query submitted
     if hasattr(st.session_state, 'query_submitted') and st.session_state.query_submitted:
-        # Display user query
+        
         with st.chat_message("user"):
             st.write(st.session_state.user_query)
         
-        # Generate and display assistant response
         with st.chat_message("assistant"):
             with st.spinner("Generating personalized response..."):
                 response_text = get_rag_response(
@@ -246,7 +213,6 @@ if hasattr(st.session_state, 'detected_emotion') and st.session_state.image_anal
                 st.write(response_text)
                 st.session_state.response_text = response_text
     
-    # Sentiment analysis (only if response exists)
     if hasattr(st.session_state, 'response_text'):
         st.markdown("---")
         st.header("🎯 Sentiment Analysis Report")
@@ -258,14 +224,14 @@ if hasattr(st.session_state, 'detected_emotion') and st.session_state.image_anal
             )
             
             if sentiment_result:
-                # Display sentiment scores
+                
                 st.subheader("Sentiment Distribution")
                 
-                # Create columns for better visualization
+                
                 col1, col2 = st.columns([2, 1])
                 
                 with col1:
-                    # Bar chart for sentiment scores
+                    
                     import pandas as pd
                     df = pd.DataFrame({
                         'Emotion': [label.capitalize() for label in sentiment_result['labels']],
@@ -274,7 +240,7 @@ if hasattr(st.session_state, 'detected_emotion') and st.session_state.image_anal
                     st.bar_chart(df.set_index('Emotion'))
                 
                 with col2:
-                    # Top 3 sentiments
+                    
                     st.subheader("Top Sentiments")
                     for i in range(min(3, len(sentiment_result['labels']))):
                         st.metric(
@@ -282,12 +248,11 @@ if hasattr(st.session_state, 'detected_emotion') and st.session_state.image_anal
                             f"{sentiment_result['scores'][i]*100:.1f}%"
                         )
                 
-                # Detailed scores table
+                
                 with st.expander("📋 Detailed Sentiment Scores"):
                     for label, score in zip(sentiment_result['labels'], sentiment_result['scores']):
                         st.write(f"**{label.capitalize()}:** {score*100:.2f}%")
 
-# Footer
 st.markdown("---")
 st.markdown(
     "<div style='text-align: center; color: gray;'>"

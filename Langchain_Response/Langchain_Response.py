@@ -1,12 +1,12 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage
-from Chroma_Embed import chroma_collection
+from Chroma_VectorStore import chroma_collection
 import chromadb.utils.embedding_functions as embedding_functions
 
 google_ef  = embedding_functions.GoogleGenerativeAiEmbeddingFunction(api_key="AIzaSyDy66sAL6y7d2kvq6ON4UeQ0x3CVj4G4Ho")
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
-    google_api_key="AIzaSyDy66sAL6y7d2kvq6ON4UeQ0x3CVj4G4Ho"
+    google_api_key="YOUR_API_KEY"
 )
 
 
@@ -32,6 +32,5 @@ messages = [
     HumanMessage(content=user_query)
 ]
 
-# --- Get response ---
 response = llm.invoke(messages)
 print("\n🤖 Gemini Response:\n", response.content)

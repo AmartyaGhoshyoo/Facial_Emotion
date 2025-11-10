@@ -20,7 +20,7 @@ if __name__=='__main__':
 
     import chromadb.utils.embedding_functions as embedding_functions
     import uuid # for generating unique IDs
-    google_ef  = embedding_functions.GoogleGenerativeAiEmbeddingFunction(api_key="AIzaSyDy66sAL6y7d2kvq6ON4UeQ0x3CVj4G4Ho")
+    google_ef  = embedding_functions.GoogleGenerativeAiEmbeddingFunction(api_key="YOUR_API_KEY")
 
     documents = []
     metadatas = []

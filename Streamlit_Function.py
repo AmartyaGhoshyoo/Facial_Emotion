@@ -68,9 +68,9 @@ def preprocess_image(image, target_size=(48, 48)):
         img_gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
     else:
         img_gray = img_array
-        img_resized = cv2.resize(img_gray, target_size)
-        img_3channel = cv2.cvtColor(img_resized, cv2.COLOR_GRAY2RGB)
-        img_batch = np.expand_dims(img_3channel, axis=0)
+    img_resized = cv2.resize(img_gray, target_size)
+    img_3channel = cv2.cvtColor(img_resized, cv2.COLOR_GRAY2RGB)
+    img_batch = np.expand_dims(img_3channel, axis=0)
     
     return img_batch
 

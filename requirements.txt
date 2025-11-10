@@ -1,0 +1,9 @@
+opencv-python
+tensorflow
+scikit-learn
+numpy
+pandas
+chromadb
+langchain
+langchain_google_genai
+transformers

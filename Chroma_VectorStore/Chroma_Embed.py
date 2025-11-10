@@ -1,6 +1,6 @@
 def chroma_collection(google_ef):
     import chromadb
-    client = chromadb.PersistentClient(path="./chroma_db")
+    client = chromadb.PersistentClient(path="Chroma_VectorStore/chroma_db")
     collection_name = "Facial_Emotion_collection"
     collection = client.get_or_create_collection(name=collection_name, embedding_function=google_ef)
     return collection

@@ -7,3 +7,5 @@ chromadb
 langchain
 langchain_google_genai
 transformers
+torch
+google-generativeai

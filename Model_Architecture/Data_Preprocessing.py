@@ -2,7 +2,7 @@
 import math
 import numpy as np
 import pandas as pd
-df=pd.read_csv("Facial_Emotion/ckextended.csv")
+df=pd.read_csv("CK+Dataset(Very Poor)/ckextended.csv")
 print(df)
 print(type(df.pixels[0]))
 print(df.isnull().sum())
